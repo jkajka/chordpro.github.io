@@ -9,24 +9,17 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
     <style>
-        body { font-family: -apple-system, system-ui, sans-serif; padding: 20px; background: #f4f4f9; color: #333; }
+        body { font-family: -apple-system, system-ui, sans-serif; padding: 20px; background: #f4f4f9; }
         textarea { width: 100%; height: 200px; border-radius: 8px; border: 1px solid #ccc; padding: 10px; font-family: monospace; font-size: 16px; box-sizing: border-box; }
-        .controls { margin: 20px 0; display: flex; gap: 10px; flex-wrap: wrap; }
+        .controls { margin: 20px 0; display: flex; gap: 10px; }
         button { padding: 12px 20px; border-radius: 8px; border: none; background: #007aff; color: white; font-weight: bold; cursor: pointer; font-size: 16px; }
         button:disabled { background: #ccc; }
-        
-        /* Chord Sheet Styling */
         #output { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-top: 20px; min-height: 100px; }
         
-        /* ChordSheetJS specific CSS for the Div Formatter */
+        /* Formatting CSS */
         .paragraph { margin-bottom: 1em; line-height: 2.2; }
-        .row { display: block; white-space: pre; }
-        .column { display: inline-block; vertical-align: bottom; }
         .chord { font-weight: bold; color: #d32f2f; display: block; height: 1.2em; }
         .lyrics { display: block; height: 1.2em; }
-        .comment { color: #666; font-style: italic; display: block; }
-        h1 { margin: 0 0 5px 0; font-size: 1.6em; }
-        h2 { margin: 0 0 10px 0; font-size: 1.2em; color: #555; }
     </style>
 </head>
 <body>
@@ -38,68 +31,61 @@
 And the [D]chords are above the [G]text.</textarea>
 
     <div class="controls">
-        <button id="format-btn" onclick="renderSheet()" disabled>Loading Library...</button>
+        <button id="format-btn" onclick="renderSheet()">Format Song</button>
         <button id="pdf-btn" onclick="downloadPDF()" style="background: #34c759;">Download PDF</button>
     </div>
 
     <div id="output">
-        <p style="color: #999;">Formatted song will appear here...</p>
+        <p id="status-msg">Library status: Checking...</p>
     </div>
 
+    <script src="https://unpkg.com/chordsheetjs@14.5.1/dist/bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-    <script type="module">
-        // Import from Skypack for native browser support
-        import ChordSheetJS from 'https://cdn.skypack.dev/chordsheetjs@14.5.1';
-
-        // Enable the button once the library is ready
-        const btn = document.getElementById('format-btn');
-        btn.innerText = "Format Song";
-        btn.disabled = false;
-
-        // Attach to window so HTML onclick can see it
-        window.renderSheet = function() {
-            try {
-                const input = document.getElementById('chordpro-input').value;
-                if (!input.trim()) {
-                    alert("Please paste some ChordPro text.");
-                    return;
-                }
-
-                const parser = new ChordSheetJS.ChordProParser();
-                const song = parser.parse(input);
-                
-                const formatter = new ChordSheetJS.HtmlDivFormatter();
-                const resultHtml = formatter.format(song);
-                
-                document.getElementById('output').innerHTML = resultHtml;
-            } catch (err) {
-                alert("Formatting Error: " + err.message);
-                console.error(err);
+    <script>
+        // Check if library loaded immediately
+        window.onload = function() {
+            const status = document.getElementById('status-msg');
+            if (window.ChordSheetJS) {
+                status.innerText = "Library loaded and ready.";
+            } else {
+                status.innerText = "Library failed to load. Please check connection.";
             }
         };
 
-        window.downloadPDF = async function() {
+        function renderSheet() {
+            try {
+                const input = document.getElementById('chordpro-input').value;
+                // Hunt for the library object
+                const Lib = window.ChordSheetJS;
+
+                if (!Lib) {
+                    alert("ChordSheetJS is not loaded.");
+                    return;
+                }
+
+                const parser = new Lib.ChordProParser();
+                const song = parser.parse(input);
+                const formatter = new Lib.HtmlDivFormatter();
+                
+                document.getElementById('output').innerHTML = formatter.format(song);
+            } catch (err) {
+                alert("Error: " + err.message);
+            }
+        }
+
+        async function downloadPDF() {
             try {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF('p', 'pt', 'a4');
-                const element = document.getElementById('output');
-
-                // Standard iPad PDF generation
-                await doc.html(element, {
-                    callback: function (doc) {
-                        doc.save('song-sheet.pdf');
-                    },
-                    x: 40,
-                    y: 40,
-                    width: 500,
-                    windowWidth: 800
+                await doc.html(document.getElementById('output'), {
+                    callback: function (doc) { doc.save('song.pdf'); },
+                    x: 40, y: 40, width: 500, windowWidth: 800
                 });
             } catch (err) {
                 alert("PDF Error: " + err.message);
             }
-        };
+        }
     </script>
-
 </body>
 </html>
