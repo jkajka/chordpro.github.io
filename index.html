@@ -60,32 +60,29 @@ window.onload = function() {
 function renderSheet() {
     try {
         const input = document.getElementById('chordpro-input').value;
-        if (!input) {
-            alert("Please paste some ChordPro text first.");
+        
+        // Find the library on the window object
+        const Lib = window.ChordSheetJS || ChordSheetJS;
+
+        if (typeof Lib === 'undefined') {
+            alert("The library is still not loading. This might be a GitHub Pages cache issue. Try refreshing while holding the shift key (or clear Safari history).");
             return;
         }
 
-        // Determine the correct reference for the library
-        // Some versions use ChordSheetJS, others use ChordSheetJS.default
-        const Lib = ChordSheetJS.default || ChordSheetJS;
-
-        if (!Lib || !Lib.ChordProParser) {
-            alert("Library Error: Could not find ChordProParser in the loaded script.");
-            return;
-        }
-
+        // Use 'new Lib.ChordProParser()' instead of just 'ChordSheetJS'
         const parser = new Lib.ChordProParser();
         const song = parser.parse(input);
-        const formatter = new Lib.HtmlDivFormatter();
         
+        // Let's use the Table Formatter as a fallback to see if it renders better
+        const formatter = new Lib.HtmlTableFormatter();
         const resultHtml = formatter.format(song);
-        document.getElementById('output').innerHTML = resultHtml;
         
-        console.log("Render Successful");
+        document.getElementById('output').innerHTML = resultHtml;
     } catch (err) {
-        alert("Error during formatting: " + err.message);
+        alert("Formatting Error: " + err.message);
     }
 }
+
 
 async function downloadPDF() {
     try {
