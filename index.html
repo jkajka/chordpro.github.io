@@ -49,43 +49,71 @@ And the [D]chords are above the [G]text.</textarea>
     </div>
 
     <script>
-        function renderSheet() {
+// Function to verify if libraries are actually ready
+window.onload = function() {
+    console.log("Page Loaded");
+    if (typeof ChordSheetJS === 'undefined') {
+        alert("Warning: ChordSheetJS library did not load from the internet.");
+    }
+};
+
+function renderSheet() {
     try {
         const input = document.getElementById('chordpro-input').value;
-        
-        // Safety check: Is the library actually loaded?
-        if (typeof ChordSheetJS === 'undefined') {
-            alert("Error: ChordSheetJS library failed to load. Check your internet connection.");
+        if (!input) {
+            alert("Please paste some ChordPro text first.");
             return;
         }
 
-        const parser = new ChordSheetJS.ChordProParser();
+        // Determine the correct reference for the library
+        // Some versions use ChordSheetJS, others use ChordSheetJS.default
+        const Lib = ChordSheetJS.default || ChordSheetJS;
+
+        if (!Lib || !Lib.ChordProParser) {
+            alert("Library Error: Could not find ChordProParser in the loaded script.");
+            return;
+        }
+
+        const parser = new Lib.ChordProParser();
         const song = parser.parse(input);
-        const formatter = new ChordSheetJS.HtmlDivFormatter();
+        const formatter = new Lib.HtmlDivFormatter();
         
-        document.getElementById('output').innerHTML = formatter.format(song);
+        const resultHtml = formatter.format(song);
+        document.getElementById('output').innerHTML = resultHtml;
+        
+        console.log("Render Successful");
     } catch (err) {
-        alert("Parsing Error: " + err.message);
+        alert("Error during formatting: " + err.message);
     }
 }
 
-        
-        async function downloadPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('p', 'pt', 'a4');
-            const element = document.getElementById('output');
-
-            // Convert the HTML div to a PDF
-            await doc.html(element, {
-                callback: function (doc) {
-                    doc.save('song-sheet.pdf');
-                },
-                x: 40,
-                y: 40,
-                width: 500, // Target width in points
-                windowWidth: 800 // Virtual browser width for rendering
-            });
+async function downloadPDF() {
+    try {
+        const { jsPDF } = window.jspdf;
+        if (!jsPDF) {
+            alert("PDF Library not loaded yet.");
+            return;
         }
+
+        const doc = new jsPDF('p', 'pt', 'a4');
+        const element = document.getElementById('output');
+
+        alert("Generating PDF... Please wait a moment.");
+
+        await doc.html(element, {
+            callback: function (doc) {
+                doc.save('song-sheet.pdf');
+            },
+            x: 40,
+            y: 40,
+            width: 500,
+            windowWidth: 800
+        });
+    } catch (err) {
+        alert("PDF Error: " + err.message);
+    }
+}
+
     </script>
 </body>
 </html>
