@@ -50,15 +50,26 @@ And the [D]chords are above the [G]text.</textarea>
 
     <script>
         function renderSheet() {
-            const input = document.getElementById('chordpro-input').value;
-            const parser = new ChordSheetJS.ChordProParser();
-            const song = parser.parse(input);
-            
-            // Using the Div Formatter for easier PDF conversion
-            const formatter = new ChordSheetJS.HtmlDivFormatter();
-            document.getElementById('output').innerHTML = formatter.format(song);
+    try {
+        const input = document.getElementById('chordpro-input').value;
+        
+        // Safety check: Is the library actually loaded?
+        if (typeof ChordSheetJS === 'undefined') {
+            alert("Error: ChordSheetJS library failed to load. Check your internet connection.");
+            return;
         }
 
+        const parser = new ChordSheetJS.ChordProParser();
+        const song = parser.parse(input);
+        const formatter = new ChordSheetJS.HtmlDivFormatter();
+        
+        document.getElementById('output').innerHTML = formatter.format(song);
+    } catch (err) {
+        alert("Parsing Error: " + err.message);
+    }
+}
+
+        
         async function downloadPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('p', 'pt', 'a4');
